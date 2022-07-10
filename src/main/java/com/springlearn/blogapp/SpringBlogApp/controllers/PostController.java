@@ -2,6 +2,7 @@ package com.springlearn.blogapp.SpringBlogApp.controllers;
 
 import com.springlearn.blogapp.SpringBlogApp.payloads.ApiResponse;
 import com.springlearn.blogapp.SpringBlogApp.payloads.PostDto;
+import com.springlearn.blogapp.SpringBlogApp.payloads.PostResponse;
 import com.springlearn.blogapp.SpringBlogApp.payloads.UserDto;
 import com.springlearn.blogapp.SpringBlogApp.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,22 +35,38 @@ public class PostController {
         return new ResponseEntity<>(post,HttpStatus.OK);
     }
     @GetMapping("/posts")
-    public ResponseEntity gelAllPosts(){
-        List<PostDto> posts = postService.getAllPosts();
+    public ResponseEntity gelAllPosts(
+            @RequestParam(value = "pageNumber",defaultValue = "0",required = false) Integer pageNumber,
+            @RequestParam(value = "pageSize",defaultValue = "10",required = false) Integer pageSize,
+            @RequestParam(value = "sortBy" ,defaultValue = "postId",required = false) String sortBy,
+            @RequestParam(value = "sortDir" ,defaultValue = "asc",required = false) String sortDir
+    ){
+        PostResponse posts = postService.getAllPosts(pageNumber,pageSize,sortBy,sortDir);
         return new ResponseEntity<>(posts,HttpStatus.OK);
     }
     @GetMapping("/user/{userId}/posts")
-    public ResponseEntity gePostByUser(@PathVariable("userId") Integer userid){
-        List<PostDto> posts= postService.getPostByUserId(userid);
+    public ResponseEntity gePostByUser(@PathVariable("userId") Integer userid,
+    @RequestParam(value = "pageNumber" ,defaultValue = "0",required = false) Integer pageNumber,
+    @RequestParam(value = "pageSize" ,defaultValue = "10",required = false) Integer pageSize
+    ){
+        PostResponse posts= postService.getPostByUserId(userid,pageNumber,pageSize);
         return new ResponseEntity<>(posts,HttpStatus.OK);
     } @GetMapping("/category/{categoryId}/posts")
-    public ResponseEntity gePostByCategory(@PathVariable("categoryId") Integer categoryId){
-        List<PostDto> posts= postService.getPostByCategory(categoryId);
+    public ResponseEntity gePostByCategory(@PathVariable("categoryId") Integer categoryId,
+                                           @RequestParam(value = "pageNumber" ,defaultValue = "0",required = false) Integer pageNumber,
+                                           @RequestParam(value = "pageSize" ,defaultValue = "10",required = false) Integer pageSize
+    ){
+        PostResponse posts= postService.getPostByCategory(categoryId,pageNumber,pageSize);
         return new ResponseEntity<>(posts,HttpStatus.OK);
     }
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity deletePostById(@PathVariable("postId") Integer postId){
         ApiResponse responce = postService.deletePost(postId);
         return new ResponseEntity<>(responce,HttpStatus.OK);
+    }
+    @GetMapping("/posts/contains/{keyword}")
+    public ResponseEntity searchPostByKeyword(@PathVariable("keyword") String keyword){
+        List<PostDto> posts = postService.searchPost(keyword);
+        return new ResponseEntity<>(posts,HttpStatus.OK);
     }
 }

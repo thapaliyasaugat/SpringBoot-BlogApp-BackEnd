@@ -6,14 +6,20 @@ import com.springlearn.blogapp.SpringBlogApp.entities.User;
 import com.springlearn.blogapp.SpringBlogApp.exceptions.ResourceNotFoundException;
 import com.springlearn.blogapp.SpringBlogApp.payloads.ApiResponse;
 import com.springlearn.blogapp.SpringBlogApp.payloads.PostDto;
+import com.springlearn.blogapp.SpringBlogApp.payloads.PostResponse;
 import com.springlearn.blogapp.SpringBlogApp.repositories.CategoryRepo;
 import com.springlearn.blogapp.SpringBlogApp.repositories.PostRepo;
 import com.springlearn.blogapp.SpringBlogApp.repositories.UserRepo;
 import com.springlearn.blogapp.SpringBlogApp.services.PostService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import javax.print.attribute.standard.PageRanges;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,10 +64,24 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDto> getAllPosts() {
-        List<Post> posts = postRepo.findAll();
+    public PostResponse getAllPosts(Integer pageNumber, Integer pageSize, String sortBy,String sortDir) {
+        Sort sort=null;
+if(sortDir.equalsIgnoreCase("asc")){
+   sort = Sort.by(sortBy).ascending();
+}else{
+sort = Sort.by(sortBy).descending();
+}
+        Pageable p= PageRequest.of(pageNumber,pageSize,sort);
+        Page<Post> pagePosts = postRepo.findAll(p);
+        List<Post> posts = pagePosts.getContent();
         List<PostDto> returnPosts = posts.stream().map((post)->modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
-        return returnPosts;
+        PostResponse postResponse=new PostResponse();
+        postResponse.setContent(returnPosts);
+        postResponse.setPageNumber(pagePosts.getNumber());
+        postResponse.setPageSize(pagePosts.getSize());
+        postResponse.setTotalElememts(pagePosts.getTotalElements());
+        postResponse.setLastPage(pagePosts.isLast());
+        return postResponse;
     }
 
     @Override
@@ -75,27 +95,45 @@ response.setSuccess(true);
     }
 
     @Override
-    public List<PostDto> getPostByCategory(Integer categoryId) {
+    public PostResponse getPostByCategory(Integer categoryId,Integer pageNumber,Integer pageSize) {
+
+        Pageable p=PageRequest.of(pageNumber,pageSize);
         Category category = categoryRepo.findById(categoryId).orElseThrow(()->new ResourceNotFoundException("category","id",categoryId));
-        List<Post> posts = postRepo.findByCategory(category);
+        Page<Post> pagePosts = postRepo.findByCategory(category,p);
+List<Post> posts = pagePosts.getContent();
         List<PostDto> returnposts = posts.stream().map((post) ->(
             modelMapper.map(post,PostDto.class)
         )).collect(Collectors.toList());
-        return returnposts;
+        PostResponse postResponse=new PostResponse();
+        postResponse.setContent(returnposts);;
+        postResponse.setTotalElememts(pagePosts.getTotalElements());
+        postResponse.setPageSize(pagePosts.getSize());
+        postResponse.setPageNumber(pagePosts.getNumber());
+        return postResponse;
     }
 
     @Override
-    public List<PostDto> getPostByUserId(Integer userId) {
+    public PostResponse getPostByUserId(Integer userId,Integer pageNumber , Integer pageSize) {
         User user = userRepo.findById(userId).orElseThrow(()->new ResourceNotFoundException("user","id",userId));
-        List<Post> posts = postRepo.findByUser(user);
+        Pageable p = PageRequest.of(pageNumber,pageSize);
+        Page<Post> pagePosts = postRepo.findByUser(user,p);
+        List<Post> posts = pagePosts.getContent();
         List<PostDto> returnposts = posts.stream().map((post) ->(
                 modelMapper.map(post,PostDto.class)
         )).collect(Collectors.toList());
-        return returnposts;
+        PostResponse postResponse=new PostResponse();
+        postResponse.setContent(returnposts);;
+        postResponse.setTotalElememts(pagePosts.getTotalElements());
+        postResponse.setPageSize(pagePosts.getSize());
+        postResponse.setPageNumber(pagePosts.getNumber());
+        return postResponse;
     }
 
     @Override
     public List<PostDto> searchPost(String keyword) {
-        return null;
-    }
+        List<Post> posts = postRepo.findByTitleContaining(keyword);
+//        List<Post> posts = postRepo.findByTitleContaining("%"+keyword+"%");
+        List<PostDto> returnPosts = posts.stream().map((post->(modelMapper.map(post,PostDto.class)))).collect(Collectors.toList());
+        return returnPosts;
+            }
 }
