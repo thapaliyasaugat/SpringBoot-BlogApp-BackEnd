@@ -26,6 +26,10 @@ public class User {
     private String about;
 
     @JsonIgnore
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    List<Comment> comments = new ArrayList<>();
+
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private List<Post> posts = new ArrayList<>();
 }
